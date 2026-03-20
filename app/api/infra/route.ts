@@ -23,11 +23,8 @@ interface InfraData {
   error?: string
 }
 
-function ssh(cmd: string): string {
-  return execSync(`ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no redeye-new "${cmd}"`, {
-    timeout: 10000,
-    encoding: 'utf8',
-  })
+function run(cmd: string): string {
+  return execSync(cmd, { timeout: 10000, encoding: 'utf8' })
 }
 
 export async function GET(): Promise<NextResponse<InfraData | { error: string }>> {
@@ -36,7 +33,7 @@ export async function GET(): Promise<NextResponse<InfraData | { error: string }>
 
   try {
     // PM2
-    const pm2Raw = ssh('pm2 jlist')
+    const pm2Raw = run('pm2 jlist')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pm2Json: any[] = JSON.parse(pm2Raw)
     const pm2: Pm2Process[] = pm2Json.map((p) => ({
@@ -49,7 +46,7 @@ export async function GET(): Promise<NextResponse<InfraData | { error: string }>
     }))
 
     // Memory
-    const memRaw = ssh('free -m')
+    const memRaw = run('free -m')
     let memTotal: number | null = null
     let memUsed: number | null = null
     let memPercent: number | null = null
@@ -67,7 +64,7 @@ export async function GET(): Promise<NextResponse<InfraData | { error: string }>
     }
 
     // Disk
-    const diskRaw = ssh('df -h /')
+    const diskRaw = run('df -h /')
     let diskPercent: number | null = null
     const diskLines = diskRaw.split('\n')
     for (const line of diskLines) {
@@ -80,7 +77,7 @@ export async function GET(): Promise<NextResponse<InfraData | { error: string }>
     }
 
     // CPU
-    const cpuRaw = ssh("top -bn1 | grep 'Cpu(s)'")
+    const cpuRaw = run("top -bn1 | grep 'Cpu(s)'")
     let cpu: number | null = null
     // e.g. "%Cpu(s):  5.9 us,  1.2 sy,  0.0 ni, 91.8 id, ..."
     const idleMatch = cpuRaw.match(/(\d+\.?\d*)\s*id/)
