@@ -1,4 +1,5 @@
 import { execSync } from 'node:child_process'
+import { auth } from '@/auth'
 import { Octokit } from '@octokit/rest'
 import { NextResponse } from 'next/server'
 
@@ -134,7 +135,10 @@ async function fetchLinearIssues(): Promise<{ issues: LinearIssue[]; errors: str
   }
 }
 
-export async function GET(): Promise<NextResponse<ProjectsData>> {
+export async function GET(): Promise<NextResponse<ProjectsData | { error: string }>> {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const token = getGithubToken()
   const [{ prs, errors: prErrors }, { issues, errors: linearErrors }] = await Promise.all([
     fetchPRs(token),

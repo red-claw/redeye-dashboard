@@ -1,4 +1,5 @@
 import { execSync } from 'node:child_process'
+import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -29,7 +30,10 @@ function ssh(cmd: string): string {
   })
 }
 
-export async function GET(): Promise<NextResponse<InfraData>> {
+export async function GET(): Promise<NextResponse<InfraData | { error: string }>> {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
     // PM2
     const pm2Raw = ssh('pm2 jlist')

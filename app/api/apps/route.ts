@@ -1,3 +1,4 @@
+import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -48,9 +49,8 @@ async function pingApp(name: string, url: string, expectedJson?: boolean): Promi
 }
 
 async function countUpcomingConcerts(): Promise<{ count: number | null; error?: string }> {
-  const icalUrl =
-    process.env.ICAL_FEED_URL ||
-    'https://p182-caldav.icloud.com/published/2/MTY5NjEyMTY1MDE2OTYxMg4rjh18ZVg2KnXzEWI8oCaJMyb59REE96gmmWFn_AZ9PPgJKFl01njsMHAulbgB3XCuc5_1uwmUbCDVzEvkfRc'
+  const icalUrl = process.env.ICAL_FEED_URL
+  if (!icalUrl) return { count: null }
 
   try {
     const controller = new AbortController()
@@ -76,7 +76,10 @@ async function countUpcomingConcerts(): Promise<{ count: number | null; error?: 
   }
 }
 
-export async function GET(): Promise<NextResponse<AppsData>> {
+export async function GET(): Promise<NextResponse<AppsData | { error: string }>> {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const [modsStatus, happyHourStatus, concertsStatus, concertData] = await Promise.all([
     pingApp('mods.redeye.dev', 'https://mods.redeye.dev/health', true),
     pingApp('happyhour.redeye.dev', 'https://happyhour.redeye.dev/'),

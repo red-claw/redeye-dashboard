@@ -1,6 +1,7 @@
 import * as dns from 'node:dns/promises'
 import * as tls from 'node:tls'
 import { SESClient, GetIdentityVerificationAttributesCommand } from '@aws-sdk/client-ses'
+import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -138,7 +139,10 @@ async function checkSes(identity: string, region: string): Promise<SesEntry> {
   }
 }
 
-export async function GET(): Promise<NextResponse<StatusData>> {
+export async function GET(): Promise<NextResponse<StatusData | { error: string }>> {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const [dnsResults, sslResults, sesResults] = await Promise.all([
     Promise.all(DNS_DOMAINS.map((d) => checkDns(d.domain, d.provider, d.expected))),
     Promise.all(SSL_DOMAINS.map((d) => checkSsl(d))),
