@@ -29,9 +29,9 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             set -e
-            cd /var/www/redeye-dashboard
+            cd /var/www/dashboard.redeye.dev
             git pull origin main
-            npm ci --omit=dev
+            npm ci
             npm run build
             pm2 restart dashboard-redeye --update-env
             echo "Deploy complete: $(date)"
